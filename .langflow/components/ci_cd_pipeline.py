@@ -12,6 +12,11 @@ import datetime
 from pathlib import Path
 from typing import Dict, List, Optional
 
+# Import shared logging utilities
+import sys
+sys.path.insert(0, str(Path(__file__).parent.parent))
+from utils.logging import log_to_ledger
+
 # LangFlow 1.4.x locates CustomComponent here ↓
 try:
     from langflow.components.base.custom import CustomComponent
@@ -58,11 +63,15 @@ class CICDPipeline(CustomComponent):
         
         try:
             # Log pipeline start
-            self._log_event("pipeline_start", {
-                "pipeline_id": pipeline_id,
-                "trigger": trigger_event,
-                "timestamp": pipeline_start.isoformat()
-            })
+            log_to_ledger(
+                event_type="pipeline_start",
+                agent="ci_cd_pipeline",
+                task_id=pipeline_id,
+                details={
+                    "trigger": trigger_event,
+                    "timestamp": pipeline_start.isoformat()
+                }
+            )
             
             results = {
                 "pipeline_id": pipeline_id,
@@ -104,13 +113,17 @@ class CICDPipeline(CustomComponent):
             
             results["status"] = "success"
             results["duration"] = str(datetime.datetime.now() - pipeline_start)
-            
+
             # Log pipeline completion
-            self._log_event("pipeline_complete", {
-                "pipeline_id": pipeline_id,
-                "status": results["status"],
-                "duration": results["duration"]
-            })
+            log_to_ledger(
+                event_type="pipeline_complete",
+                agent="ci_cd_pipeline",
+                task_id=pipeline_id,
+                details={
+                    "status": results["status"],
+                    "duration": results["duration"]
+                }
+            )
             
             return self._format_results(results)
             
@@ -121,7 +134,12 @@ class CICDPipeline(CustomComponent):
                 "error": str(e),
                 "duration": str(datetime.datetime.now() - pipeline_start)
             }
-            self._log_event("pipeline_error", error_result)
+            log_to_ledger(
+                event_type="pipeline_error",
+                agent="ci_cd_pipeline",
+                task_id=pipeline_id,
+                details=error_result
+            )
             return self._format_results(error_result)
     
     def _run_validation(self) -> Dict:
@@ -319,26 +337,6 @@ class CICDPipeline(CustomComponent):
                 "error": str(e),
                 "timestamp": datetime.datetime.now().isoformat()
             }
-    
-    def _log_event(self, event_type: str, data: Dict):
-        """Log events to the project ledger."""
-        try:
-            ledger_path = self.memory_dir / "pm_ledger.jsonl"
-            ledger_path.parent.mkdir(exist_ok=True)
-            
-            log_entry = {
-                "timestamp": datetime.datetime.now().isoformat(),
-                "event": event_type,
-                "agent": "ci_cd_pipeline",
-                "task_id": data.get("pipeline_id", "unknown"),
-                "details": data
-            }
-            
-            with open(ledger_path, "a") as f:
-                f.write(json.dumps(log_entry) + "\n")
-                
-        except Exception as e:
-            print(f"Failed to log event: {e}")
     
     def _format_results(self, results: Dict) -> str:
         """Format pipeline results for output."""

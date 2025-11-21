@@ -13,6 +13,11 @@ from pathlib import Path
 from typing import Dict, Set, List, Optional
 from datetime import datetime
 
+# Import shared logging utilities
+import sys
+sys.path.insert(0, str(Path(__file__).parent.parent))
+from utils.logging import log_to_ledger
+
 # LangFlow 1.4.x locates CustomComponent here ↓
 try:
     from langflow.components.base.custom import CustomComponent
@@ -93,11 +98,16 @@ class EnhancedFileWatcher(CustomComponent):
             self.watch_thread.start()
             
             # Log watcher start
-            self._log_event("watcher_start", {
-                "directories": watch_directories,
-                "auto_trigger": auto_trigger_pipeline,
-                "debounce": debounce_seconds
-            })
+            log_to_ledger(
+                event_type="watcher_start",
+                agent="enhanced_file_watcher",
+                task_id=f"watcher_{int(time.time())}",
+                details={
+                    "directories": watch_directories,
+                    "auto_trigger": auto_trigger_pipeline,
+                    "debounce": debounce_seconds
+                }
+            )
             
             return f"""# Enhanced File Watcher Started
 
@@ -124,8 +134,13 @@ Watcher is running in background thread.
         self.is_watching = False
         if self.watch_thread and self.watch_thread.is_alive():
             self.watch_thread.join(timeout=5)
-        
-        self._log_event("watcher_stop", {})
+
+        log_to_ledger(
+            event_type="watcher_stop",
+            agent="enhanced_file_watcher",
+            task_id=f"watcher_{int(time.time())}",
+            details={}
+        )
         return "File watcher stopped."
     
     def _initialize_file_cache(self, watch_directories: List[str], ignore_patterns: List[str]):
@@ -164,12 +179,17 @@ Watcher is running in background thread.
                 if current_changes:
                     pending_changes.update(current_changes)
                     last_change_time = time.time()
-                    
+
                     # Log detected changes
-                    self._log_event("files_changed", {
-                        "files": list(current_changes),
-                        "count": len(current_changes)
-                    })
+                    log_to_ledger(
+                        event_type="files_changed",
+                        agent="enhanced_file_watcher",
+                        task_id=f"watcher_{int(time.time())}",
+                        details={
+                            "files": list(current_changes),
+                            "count": len(current_changes)
+                        }
+                    )
                 
                 # Check if debounce period has passed and we have pending changes
                 if (pending_changes and 
@@ -181,12 +201,22 @@ Watcher is running in background thread.
                 
                 # Sleep before next scan
                 time.sleep(1)
-                
+
             except Exception as e:
-                self._log_event("watcher_error", {"error": str(e)})
+                log_to_ledger(
+                    event_type="watcher_error",
+                    agent="enhanced_file_watcher",
+                    task_id=f"watcher_{int(time.time())}",
+                    details={"error": str(e)}
+                )
                 time.sleep(5)  # Wait longer on error
-        
-        self._log_event("watcher_stopped", {})
+
+        log_to_ledger(
+            event_type="watcher_stopped",
+            agent="enhanced_file_watcher",
+            task_id=f"watcher_{int(time.time())}",
+            details={}
+        )
     
     def _scan_for_changes(self, watch_directories: List[str], ignore_patterns: List[str]) -> Set[str]:
         """Scan watched directories for file changes."""
@@ -241,9 +271,14 @@ Watcher is running in background thread.
             # Auto-trigger pipeline if enabled and we have significant changes
             if auto_trigger_pipeline and (asset_changes or script_changes or project_changes):
                 self._trigger_pipeline(changed_files)
-            
+
         except Exception as e:
-            self._log_event("process_changes_error", {"error": str(e)})
+            log_to_ledger(
+                event_type="process_changes_error",
+                agent="enhanced_file_watcher",
+                task_id=f"watcher_{int(time.time())}",
+                details={"error": str(e)}
+            )
     
     def _trigger_pipeline(self, changed_files: List[str]):
         """Trigger the CI/CD pipeline."""
@@ -260,13 +295,23 @@ Watcher is running in background thread.
                 notify_on_completion=True
             )
             
-            self._log_event("pipeline_triggered", {
-                "trigger_files": changed_files,
-                "pipeline_result": "success" if "success" in result else "failed"
-            })
-            
+            log_to_ledger(
+                event_type="pipeline_triggered",
+                agent="enhanced_file_watcher",
+                task_id=f"watcher_{int(time.time())}",
+                details={
+                    "trigger_files": changed_files,
+                    "pipeline_result": "success" if "success" in result else "failed"
+                }
+            )
+
         except Exception as e:
-            self._log_event("pipeline_trigger_error", {"error": str(e)})
+            log_to_ledger(
+                event_type="pipeline_trigger_error",
+                agent="enhanced_file_watcher",
+                task_id=f"watcher_{int(time.time())}",
+                details={"error": str(e)}
+            )
     
     def _create_approval_entry(self, change_summary: Dict):
         """Create an entry in the approval queue for detected changes."""
@@ -298,9 +343,14 @@ Watcher is running in background thread.
             # Save updated queue
             with open(queue_path, "w") as f:
                 json.dump(queue_data, f, indent=2)
-                
+
         except Exception as e:
-            self._log_event("approval_entry_error", {"error": str(e)})
+            log_to_ledger(
+                event_type="approval_entry_error",
+                agent="enhanced_file_watcher",
+                task_id=f"watcher_{int(time.time())}",
+                details={"error": str(e)}
+            )
     
     def _should_ignore(self, file_path: str, ignore_patterns: List[str]) -> bool:
         """Check if a file should be ignored based on patterns."""
@@ -319,25 +369,6 @@ Watcher is running in background thread.
         except Exception:
             return "error"
     
-    def _log_event(self, event_type: str, data: Dict):
-        """Log events to the project ledger."""
-        try:
-            ledger_path = self.memory_dir / "pm_ledger.jsonl"
-            ledger_path.parent.mkdir(exist_ok=True)
-            
-            log_entry = {
-                "timestamp": datetime.now().isoformat(),
-                "event": event_type,
-                "agent": "enhanced_file_watcher",
-                "task_id": f"watcher_{int(time.time())}",
-                "details": data
-            }
-            
-            with open(ledger_path, "a") as f:
-                f.write(json.dumps(log_entry) + "\n")
-                
-        except Exception as e:
-            print(f"Failed to log event: {e}")
 
 
 if __name__ == "__main__":
