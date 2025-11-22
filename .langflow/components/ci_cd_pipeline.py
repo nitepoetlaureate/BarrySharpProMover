@@ -4,16 +4,15 @@ Continuous Integration/Deployment Pipeline for Barry Sharp Pro Mover
 Integrates with the existing build system and adds automated testing, validation, and deployment.
 """
 
-import os
-import json
-import time
-import subprocess
 import datetime
-from pathlib import Path
-from typing import Dict, List, Optional
+import subprocess
 
 # Import shared logging utilities
 import sys
+import time
+from pathlib import Path
+from typing import Dict
+
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from utils.logging import log_to_ledger
 
@@ -44,7 +43,7 @@ class CICDPipeline(CustomComponent):
         self.build_dir = self.project_root / "build"
         self.memory_dir = self.project_root / "memory"
         self.scripts_dir = self.project_root / "scripts"
-        
+
     def build(
         self,
         trigger_event: str = "manual",
@@ -60,7 +59,7 @@ class CICDPipeline(CustomComponent):
         """
         pipeline_start = datetime.datetime.now()
         pipeline_id = f"pipeline_{int(time.time())}"
-        
+
         try:
             # Log pipeline start
             log_to_ledger(
@@ -72,13 +71,13 @@ class CICDPipeline(CustomComponent):
                     "timestamp": pipeline_start.isoformat()
                 }
             )
-            
+
             results = {
                 "pipeline_id": pipeline_id,
                 "status": "running",
                 "stages": {}
             }
-            
+
             # Stage 1: Pre-build validation
             if run_validation:
                 validation_result = self._run_validation()
@@ -86,14 +85,14 @@ class CICDPipeline(CustomComponent):
                 if not validation_result["success"]:
                     results["status"] = "failed"
                     return self._format_results(results)
-            
+
             # Stage 2: Build ROM
             build_result = self._run_build()
             results["stages"]["build"] = build_result
             if not build_result["success"]:
                 results["status"] = "failed"
                 return self._format_results(results)
-            
+
             # Stage 3: Automated testing
             if auto_test:
                 test_result = self._run_tests()
@@ -101,16 +100,16 @@ class CICDPipeline(CustomComponent):
                 if not test_result["success"]:
                     results["status"] = "failed"
                     return self._format_results(results)
-            
+
             # Stage 4: Deployment
             deploy_result = self._deploy(deploy_target)
             results["stages"]["deploy"] = deploy_result
-            
+
             # Stage 5: Notification
             if notify_on_completion:
                 notify_result = self._send_notifications(results)
                 results["stages"]["notify"] = notify_result
-            
+
             results["status"] = "success"
             results["duration"] = str(datetime.datetime.now() - pipeline_start)
 
@@ -124,9 +123,9 @@ class CICDPipeline(CustomComponent):
                     "duration": results["duration"]
                 }
             )
-            
+
             return self._format_results(results)
-            
+
         except Exception as e:
             error_result = {
                 "pipeline_id": pipeline_id,
@@ -141,7 +140,7 @@ class CICDPipeline(CustomComponent):
                 details=error_result
             )
             return self._format_results(error_result)
-    
+
     def _run_validation(self) -> Dict:
         """Run pre-build validation checks."""
         try:
@@ -151,13 +150,13 @@ class CICDPipeline(CustomComponent):
                 ["make", "check-scenes"],
                 ["make", "check-json"]
             ]
-            
+
             validation_results = []
             for cmd in validation_commands:
                 result = subprocess.run(
-                    cmd, 
+                    cmd,
                     cwd=self.project_root,
-                    capture_output=True, 
+                    capture_output=True,
                     text=True
                 )
                 validation_results.append({
@@ -166,22 +165,22 @@ class CICDPipeline(CustomComponent):
                     "output": result.stdout,
                     "error": result.stderr
                 })
-            
+
             overall_success = all(r["success"] for r in validation_results)
-            
+
             return {
                 "success": overall_success,
                 "checks": validation_results,
                 "timestamp": datetime.datetime.now().isoformat()
             }
-            
+
         except Exception as e:
             return {
                 "success": False,
                 "error": str(e),
                 "timestamp": datetime.datetime.now().isoformat()
             }
-    
+
     def _run_build(self) -> Dict:
         """Execute the build process."""
         try:
@@ -192,12 +191,12 @@ class CICDPipeline(CustomComponent):
                 capture_output=True,
                 text=True
             )
-            
+
             # Check if ROM was created
             rom_path = self.build_dir / "rom.gb"
             rom_exists = rom_path.exists()
             rom_size = rom_path.stat().st_size if rom_exists else 0
-            
+
             return {
                 "success": result.returncode == 0 and rom_exists,
                 "rom_created": rom_exists,
@@ -206,14 +205,14 @@ class CICDPipeline(CustomComponent):
                 "build_error": result.stderr,
                 "timestamp": datetime.datetime.now().isoformat()
             }
-            
+
         except Exception as e:
             return {
                 "success": False,
                 "error": str(e),
                 "timestamp": datetime.datetime.now().isoformat()
             }
-    
+
     def _run_tests(self) -> Dict:
         """Run automated tests on the built ROM."""
         try:
@@ -222,7 +221,7 @@ class CICDPipeline(CustomComponent):
                 ["python3", "scripts/validation/check_bg_tiles.py"],
                 ["python3", "scripts/validation/check_scene_limits.py"]
             ]
-            
+
             test_results = []
             for cmd in test_commands:
                 if (self.project_root / cmd[1]).exists():
@@ -238,22 +237,22 @@ class CICDPipeline(CustomComponent):
                         "output": result.stdout,
                         "error": result.stderr
                     })
-            
+
             overall_success = all(r["success"] for r in test_results)
-            
+
             return {
                 "success": overall_success,
                 "tests": test_results,
                 "timestamp": datetime.datetime.now().isoformat()
             }
-            
+
         except Exception as e:
             return {
                 "success": False,
                 "error": str(e),
                 "timestamp": datetime.datetime.now().isoformat()
             }
-    
+
     def _deploy(self, target: str) -> Dict:
         """Deploy the built ROM to the specified target."""
         try:
@@ -273,50 +272,50 @@ class CICDPipeline(CustomComponent):
                         "error": "ROM file not found",
                         "timestamp": datetime.datetime.now().isoformat()
                     }
-            
+
             elif target == "staging":
                 # Copy to staging directory
                 staging_dir = self.project_root / "staging"
                 staging_dir.mkdir(exist_ok=True)
-                
+
                 timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
                 staged_rom = staging_dir / f"barry_sharp_{timestamp}.gb"
-                
+
                 subprocess.run([
-                    "cp", 
-                    str(self.build_dir / "rom.gb"), 
+                    "cp",
+                    str(self.build_dir / "rom.gb"),
                     str(staged_rom)
                 ], check=True)
-                
+
                 return {
                     "success": True,
                     "target": target,
                     "location": str(staged_rom),
                     "timestamp": datetime.datetime.now().isoformat()
                 }
-            
+
             else:
                 return {
                     "success": False,
                     "error": f"Unknown deployment target: {target}",
                     "timestamp": datetime.datetime.now().isoformat()
                 }
-                
+
         except Exception as e:
             return {
                 "success": False,
                 "error": str(e),
                 "timestamp": datetime.datetime.now().isoformat()
             }
-    
+
     def _send_notifications(self, results: Dict) -> Dict:
         """Send notifications about pipeline completion."""
         try:
             status = results.get("status", "unknown")
             pipeline_id = results.get("pipeline_id", "unknown")
-            
+
             message = f"Pipeline {pipeline_id} completed with status: {status}"
-            
+
             # Use existing notification system
             notify_script = self.scripts_dir / "notify_cli.sh"
             if notify_script.exists():
@@ -324,41 +323,41 @@ class CICDPipeline(CustomComponent):
                     str(notify_script),
                     message
                 ], check=True)
-            
+
             return {
                 "success": True,
                 "message": message,
                 "timestamp": datetime.datetime.now().isoformat()
             }
-            
+
         except Exception as e:
             return {
                 "success": False,
                 "error": str(e),
                 "timestamp": datetime.datetime.now().isoformat()
             }
-    
+
     def _format_results(self, results: Dict) -> str:
         """Format pipeline results for output."""
         status = results.get("status", "unknown")
         pipeline_id = results.get("pipeline_id", "unknown")
-        
-        output = [f"# CI/CD Pipeline Results\n"]
+
+        output = ["# CI/CD Pipeline Results\n"]
         output.append(f"**Pipeline ID:** {pipeline_id}")
         output.append(f"**Status:** {status}")
-        
+
         if "duration" in results:
             output.append(f"**Duration:** {results['duration']}")
-        
+
         if "stages" in results:
             output.append("\n## Stage Results\n")
             for stage_name, stage_data in results["stages"].items():
                 stage_status = "✅" if stage_data.get("success", False) else "❌"
                 output.append(f"- **{stage_name.title()}:** {stage_status}")
-        
+
         if "error" in results:
             output.append(f"\n**Error:** {results['error']}")
-        
+
         return "\n".join(output)
 
 

@@ -9,8 +9,8 @@ import hashlib
 import json
 import subprocess
 import sys
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
 from typing import Dict, List
 
 PROJECT_ROOT = Path(__file__).parent.parent.parent
@@ -226,13 +226,13 @@ def create_release(version: str, sign: bool = False, gpg_key: str = None):
             f.write("\n## Verification\n\n")
             f.write("See `manifest_*.json` for checksums.\n")
         print(f"\n✅ Created release notes template: {notes_file.name}")
-        print(f"   Edit this file before publishing!")
+        print("   Edit this file before publishing!")
 
     print("\n" + "=" * 60)
     print(f"✅ Release {version} created successfully!")
     print(f"📁 Location: {release_dir}")
     print(f"📦 Artifacts: {len([a for a in artifacts if a.suffix in ['.gb', '.gbc']])}")
-    print(f"📝 Checksums: ✅")
+    print("📝 Checksums: ✅")
     print(f"🔐 Signatures: {'✅' if sign else '❌ (use --sign to enable)'}")
 
     return 0
@@ -259,7 +259,7 @@ def verify_release(version: str):
         print("❌ No manifest found")
         return 1
 
-    with open(manifest_files[0], 'r') as f:
+    with open(manifest_files[0]) as f:
         manifest = json.load(f)
 
     print(f"Version: {manifest['version']}")
@@ -275,7 +275,7 @@ def verify_release(version: str):
         print(f"Checking {filename}...")
 
         if not artifact_path.exists():
-            print(f"  ❌ File not found")
+            print("  ❌ File not found")
             all_valid = False
             continue
 
@@ -294,9 +294,9 @@ def verify_release(version: str):
         sig_file = artifact_path.with_suffix(artifact_path.suffix + '.sig')
         if sig_file.exists():
             if verify_signature(artifact_path, sig_file):
-                print(f"  ✅ GPG Signature: VALID")
+                print("  ✅ GPG Signature: VALID")
             else:
-                print(f"  ❌ GPG Signature: INVALID")
+                print("  ❌ GPG Signature: INVALID")
                 all_valid = False
 
     print("\n" + "=" * 60)

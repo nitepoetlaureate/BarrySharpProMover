@@ -72,7 +72,7 @@ def load_approval_queue() -> dict:
     """
     if not APPROVAL_QUEUE_PATH.exists():
         return {"queue": []}
-    with open(APPROVAL_QUEUE_PATH, "r") as f:
+    with open(APPROVAL_QUEUE_PATH) as f:
         return json.load(f)
 
 def update_approval_queue(new_file: Path) -> None:

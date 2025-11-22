@@ -8,7 +8,6 @@ import json
 from pathlib import Path
 from typing import Any, Dict
 
-
 # Determine project root
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 LEDGER_PATH = PROJECT_ROOT / "memory" / "pm_ledger.jsonl"
@@ -77,7 +76,7 @@ def load_ledger(ledger_path: Path | None = None) -> list:
         return []
 
     entries = []
-    with open(ledger_path, "r") as f:
+    with open(ledger_path) as f:
         for line in f:
             line = line.strip()
             if line:

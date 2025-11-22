@@ -1,7 +1,7 @@
-from PIL import Image
-import sys
-import os
 import argparse
+import os
+
+from PIL import Image
 
 TILE_SIZE = 8
 MAX_TILES = 192

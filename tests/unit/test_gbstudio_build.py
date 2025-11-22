@@ -1,13 +1,13 @@
 """Unit tests for GBStudioBuild component."""
 
-import pytest
-from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock
-import subprocess
-
 
 # Import the component
 import sys
+from pathlib import Path
+from unittest.mock import Mock, patch
+
+import pytest
+
 sys.path.insert(0, str(Path(__file__).parent.parent.parent / ".langflow" / "components"))
 
 from gbstudio_build import GBStudioBuild

@@ -5,11 +5,9 @@ Enhanced Asset Validator with Intelligent Suggestions
 Validates assets and provides actionable recommendations for improvement.
 """
 
-import json
 import sys
 from pathlib import Path
-from typing import Dict, List, Tuple
-from collections import Counter
+from typing import List
 
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 
@@ -98,7 +96,7 @@ class AssetValidator:
 
     def _validate_naming_conventions(self):
         """Check naming conventions across all assets."""
-        print(f"\n📝 Checking Naming Conventions")
+        print("\n📝 Checking Naming Conventions")
 
         assets_dir = self.project_root / "assets"
         if not assets_dir.exists():
@@ -152,7 +150,7 @@ class AssetValidator:
 
     def _validate_project_structure(self):
         """Validate overall project structure."""
-        print(f"\n📁 Checking Project Structure")
+        print("\n📁 Checking Project Structure")
 
         expected_dirs = [
             ("assets", "Asset files (sprites, backgrounds, music)"),
@@ -179,7 +177,7 @@ class AssetValidator:
 
     def _analyze_asset_usage(self):
         """Analyze asset usage and suggest optimizations."""
-        print(f"\n📊 Analyzing Asset Usage")
+        print("\n📊 Analyzing Asset Usage")
 
         assets_dir = self.project_root / "assets"
         if not assets_dir.exists():

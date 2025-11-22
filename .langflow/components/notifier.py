@@ -1,6 +1,7 @@
 import subprocess
 import sys
 
+
 def notify_cli(message):
     try:
         subprocess.call(["./scripts/notify_cli.sh", message])

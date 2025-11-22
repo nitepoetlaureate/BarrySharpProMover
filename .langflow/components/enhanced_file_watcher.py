@@ -4,17 +4,18 @@ Enhanced File Watcher for Barry Sharp Pro Mover
 Monitors project files and automatically triggers CI/CD pipeline when changes are detected.
 """
 
-import os
-import json
-import time
 import hashlib
-import threading
-from pathlib import Path
-from typing import Dict, Set, List, Optional
-from datetime import datetime
+import json
+import os
 
 # Import shared logging utilities
 import sys
+import threading
+import time
+from datetime import datetime
+from pathlib import Path
+from typing import Dict, List, Set
+
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from utils.logging import log_to_ledger
 
@@ -46,7 +47,7 @@ class EnhancedFileWatcher(CustomComponent):
         self.is_watching = False
         self.watch_thread = None
         self.file_hashes = {}
-        
+
     def build(
         self,
         watch_directories: List[str] = None,
@@ -70,7 +71,7 @@ class EnhancedFileWatcher(CustomComponent):
                 "docs/",
                 "BARRY-SHARP-PRO-MOVER-1.gbsproj"
             ]
-        
+
         if ignore_patterns is None:
             ignore_patterns = [
                 "*.tmp",
@@ -83,11 +84,11 @@ class EnhancedFileWatcher(CustomComponent):
                 "memory/*",
                 ".git/*"
             ]
-        
+
         try:
             # Initialize file hash cache
             self._initialize_file_cache(watch_directories, ignore_patterns)
-            
+
             # Start watching
             self.is_watching = True
             self.watch_thread = threading.Thread(
@@ -96,7 +97,7 @@ class EnhancedFileWatcher(CustomComponent):
             )
             self.watch_thread.daemon = True
             self.watch_thread.start()
-            
+
             # Log watcher start
             log_to_ledger(
                 event_type="watcher_start",
@@ -108,7 +109,7 @@ class EnhancedFileWatcher(CustomComponent):
                     "debounce": debounce_seconds
                 }
             )
-            
+
             return f"""# Enhanced File Watcher Started
 
 **Status:** Active
@@ -125,10 +126,10 @@ class EnhancedFileWatcher(CustomComponent):
 
 Watcher is running in background thread.
 """
-            
+
         except Exception as e:
             return f"**Error starting file watcher:** {str(e)}"
-    
+
     def stop_watching(self) -> str:
         """Stop the file watcher."""
         self.is_watching = False
@@ -142,14 +143,14 @@ Watcher is running in background thread.
             details={}
         )
         return "File watcher stopped."
-    
+
     def _initialize_file_cache(self, watch_directories: List[str], ignore_patterns: List[str]):
         """Initialize the file hash cache for change detection."""
         self.file_hashes = {}
-        
+
         for watch_dir in watch_directories:
             full_path = self.project_root / watch_dir
-            
+
             if full_path.is_file():
                 # Single file
                 if not self._should_ignore(str(full_path), ignore_patterns):
@@ -159,23 +160,23 @@ Watcher is running in background thread.
                 for file_path in full_path.rglob("*"):
                     if file_path.is_file() and not self._should_ignore(str(file_path), ignore_patterns):
                         self.file_hashes[str(file_path)] = self._get_file_hash(file_path)
-    
-    def _watch_loop(self, watch_directories: List[str], ignore_patterns: List[str], 
+
+    def _watch_loop(self, watch_directories: List[str], ignore_patterns: List[str],
                    auto_trigger_pipeline: bool, debounce_seconds: int, watch_duration: int):
         """Main watching loop."""
         start_time = time.time()
         last_change_time = 0
         pending_changes = set()
-        
+
         while self.is_watching:
             try:
                 # Check if we should stop based on duration
                 if watch_duration > 0 and (time.time() - start_time) > watch_duration:
                     break
-                
+
                 # Scan for changes
                 current_changes = self._scan_for_changes(watch_directories, ignore_patterns)
-                
+
                 if current_changes:
                     pending_changes.update(current_changes)
                     last_change_time = time.time()
@@ -190,15 +191,15 @@ Watcher is running in background thread.
                             "count": len(current_changes)
                         }
                     )
-                
+
                 # Check if debounce period has passed and we have pending changes
-                if (pending_changes and 
+                if (pending_changes and
                     time.time() - last_change_time >= debounce_seconds):
-                    
+
                     # Process the changes
                     self._process_changes(list(pending_changes), auto_trigger_pipeline)
                     pending_changes.clear()
-                
+
                 # Sleep before next scan
                 time.sleep(1)
 
@@ -217,16 +218,16 @@ Watcher is running in background thread.
             task_id=f"watcher_{int(time.time())}",
             details={}
         )
-    
+
     def _scan_for_changes(self, watch_directories: List[str], ignore_patterns: List[str]) -> Set[str]:
         """Scan watched directories for file changes."""
         changes = set()
         current_files = {}
-        
+
         # Scan all watched locations
         for watch_dir in watch_directories:
             full_path = self.project_root / watch_dir
-            
+
             if full_path.is_file():
                 if not self._should_ignore(str(full_path), ignore_patterns):
                     current_files[str(full_path)] = self._get_file_hash(full_path)
@@ -234,22 +235,22 @@ Watcher is running in background thread.
                 for file_path in full_path.rglob("*"):
                     if file_path.is_file() and not self._should_ignore(str(file_path), ignore_patterns):
                         current_files[str(file_path)] = self._get_file_hash(file_path)
-        
+
         # Compare with cached hashes
         for file_path, current_hash in current_files.items():
             cached_hash = self.file_hashes.get(file_path)
             if cached_hash != current_hash:
                 changes.add(file_path)
                 self.file_hashes[file_path] = current_hash
-        
+
         # Check for deleted files
         for cached_file in list(self.file_hashes.keys()):
             if cached_file not in current_files:
                 changes.add(cached_file)
                 del self.file_hashes[cached_file]
-        
+
         return changes
-    
+
     def _process_changes(self, changed_files: List[str], auto_trigger_pipeline: bool):
         """Process detected file changes."""
         try:
@@ -258,7 +259,7 @@ Watcher is running in background thread.
             script_changes = [f for f in changed_files if "/scripts/" in f]
             project_changes = [f for f in changed_files if f.endswith(".gbsproj")]
             doc_changes = [f for f in changed_files if "/docs/" in f]
-            
+
             # Create approval queue entry
             self._create_approval_entry({
                 "asset_changes": asset_changes,
@@ -267,7 +268,7 @@ Watcher is running in background thread.
                 "doc_changes": doc_changes,
                 "total_changes": len(changed_files)
             })
-            
+
             # Auto-trigger pipeline if enabled and we have significant changes
             if auto_trigger_pipeline and (asset_changes or script_changes or project_changes):
                 self._trigger_pipeline(changed_files)
@@ -279,13 +280,13 @@ Watcher is running in background thread.
                 task_id=f"watcher_{int(time.time())}",
                 details={"error": str(e)}
             )
-    
+
     def _trigger_pipeline(self, changed_files: List[str]):
         """Trigger the CI/CD pipeline."""
         try:
             # Import and run the CI/CD pipeline
             from .ci_cd_pipeline import CICDPipeline
-            
+
             pipeline = CICDPipeline()
             result = pipeline.build(
                 trigger_event="file_change",
@@ -294,7 +295,7 @@ Watcher is running in background thread.
                 deploy_target="local",
                 notify_on_completion=True
             )
-            
+
             log_to_ledger(
                 event_type="pipeline_triggered",
                 agent="enhanced_file_watcher",
@@ -312,20 +313,20 @@ Watcher is running in background thread.
                 task_id=f"watcher_{int(time.time())}",
                 details={"error": str(e)}
             )
-    
+
     def _create_approval_entry(self, change_summary: Dict):
         """Create an entry in the approval queue for detected changes."""
         try:
             queue_path = self.memory_dir / "approval_queue.json"
             queue_path.parent.mkdir(exist_ok=True)
-            
+
             # Load existing queue
             if queue_path.exists():
-                with open(queue_path, "r") as f:
+                with open(queue_path) as f:
                     queue_data = json.load(f)
             else:
                 queue_data = {"queue": []}
-            
+
             # Create new entry
             entry = {
                 "task_id": f"file_change_{int(time.time())}",
@@ -337,9 +338,9 @@ Watcher is running in background thread.
                 "submitted_at": datetime.now().isoformat(),
                 "comments": ""
             }
-            
+
             queue_data["queue"].append(entry)
-            
+
             # Save updated queue
             with open(queue_path, "w") as f:
                 json.dump(queue_data, f, indent=2)
@@ -351,16 +352,16 @@ Watcher is running in background thread.
                 task_id=f"watcher_{int(time.time())}",
                 details={"error": str(e)}
             )
-    
+
     def _should_ignore(self, file_path: str, ignore_patterns: List[str]) -> bool:
         """Check if a file should be ignored based on patterns."""
         import fnmatch
-        
+
         for pattern in ignore_patterns:
             if fnmatch.fnmatch(file_path, pattern) or fnmatch.fnmatch(os.path.basename(file_path), pattern):
                 return True
         return False
-    
+
     def _get_file_hash(self, file_path: Path) -> str:
         """Get MD5 hash of a file for change detection."""
         try:
@@ -368,7 +369,7 @@ Watcher is running in background thread.
                 return hashlib.md5(f.read()).hexdigest()
         except Exception:
             return "error"
-    
+
 
 
 if __name__ == "__main__":

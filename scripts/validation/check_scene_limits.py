@@ -1,13 +1,13 @@
-import os
-import json
 import argparse
+import json
+import os
 
 MAX_ACTORS = 20
 MAX_TRIGGERS = 30
 MAX_SPRITE_TILES = 96
 
 def check_scene(path):
-    with open(path, 'r') as f:
+    with open(path) as f:
         data = json.load(f)
 
     actor_count = len(data.get("actors", []))

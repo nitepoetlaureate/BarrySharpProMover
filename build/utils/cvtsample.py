@@ -3,6 +3,7 @@ import sys
 import wave
 from pathlib import Path
 
+
 def main(argv=None):
     argv = argv or sys.argv
     if len(argv) < 2:
@@ -23,10 +24,10 @@ def main(argv=None):
     with wave.open(str(infilename), mode="rb") as f:
         p = f.getparams()
         if (p.nchannels == 1) and (p.sampwidth == 1) and (p.framerate >= 8000) and (p.framerate <= 8192) and (p.comptype == 'NONE'):
-            with open(str(infilename.with_suffix('.c')), "w") as d:            
+            with open(str(infilename.with_suffix('.c')), "w") as d:
                 data = f.readframes(p.nframes)
                 c = 0
-                cnt = 0;
+                cnt = 0
                 flag = False
                 d.write(sHDR.format(str(infilename), ident, ident))
                 for i in range(len(data) - len(data) % 32):
@@ -35,7 +36,7 @@ def main(argv=None):
                         d.write(sEMIT.format(c))
                         cnt += 1
                         d.write(sNEW if (cnt % 16 == 0) else sNONEW)
-                            
+
                     flag = not flag
                 d.write(sFOOT.format(ident, ident))
         else:

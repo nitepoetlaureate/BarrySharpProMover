@@ -56,3 +56,6 @@ dmypy.json
 
 # Ruff
 .ruff_cache/
+
+# Performance profiling outputs
+memory/profiles/

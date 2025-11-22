@@ -19,7 +19,7 @@ def load_ledger() -> list:
     """
     if not LEDGER_PATH.exists():
         return []
-    with open(LEDGER_PATH, "r") as f:
+    with open(LEDGER_PATH) as f:
         return [json.loads(line.strip()) for line in f if line.strip()]
 
 
@@ -31,7 +31,7 @@ def load_queue() -> list:
     """
     if not QUEUE_PATH.exists():
         return []
-    with open(QUEUE_PATH, "r") as f:
+    with open(QUEUE_PATH) as f:
         return json.load(f).get("queue", [])
 
 def generate_report() -> Path:

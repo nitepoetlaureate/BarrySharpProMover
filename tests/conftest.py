@@ -1,10 +1,11 @@
 """Pytest configuration and shared fixtures for all tests."""
 
-import pytest
-from pathlib import Path
-from unittest.mock import Mock, MagicMock
-import tempfile
 import shutil
+import tempfile
+from pathlib import Path
+from unittest.mock import MagicMock, Mock
+
+import pytest
 
 
 @pytest.fixture

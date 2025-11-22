@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 import sys
+
 from PIL import Image
+
 
 def hexdump(b, w=32):
     print("\n".join(b[i:i + w].hex() for i in range(0, len(b), w)))

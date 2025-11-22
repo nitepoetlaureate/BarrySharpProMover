@@ -5,12 +5,12 @@ Performance Benchmark for ROM Build Process
 Measures build time, validation time, and resource usage.
 """
 
-import time
-import subprocess
 import json
+import subprocess
 import sys
-from pathlib import Path
+import time
 from datetime import datetime
+from pathlib import Path
 from typing import Dict, List
 
 PROJECT_ROOT = Path(__file__).parent.parent.parent

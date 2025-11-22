@@ -1,5 +1,4 @@
 import os
-import json
 import shutil
 
 LANGFLOW_COMPONENTS_DIR = os.path.expanduser("~/.langflow/components")

@@ -8,10 +8,9 @@ Implements intelligent caching to speed up repeated builds.
 import hashlib
 import json
 import shutil
-import time
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Dict, Optional
-from datetime import datetime, timedelta
 
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 CACHE_DIR = PROJECT_ROOT / ".build_cache"
@@ -33,9 +32,9 @@ class BuildCache:
         """Load the cache index."""
         if self.index_file.exists():
             try:
-                with open(self.index_file, 'r') as f:
+                with open(self.index_file) as f:
                     return json.load(f)
-            except (json.JSONDecodeError, IOError):
+            except (OSError, json.JSONDecodeError):
                 return {'entries': {}, 'stats': {'hits': 0, 'misses': 0}}
         return {'entries': {}, 'stats': {'hits': 0, 'misses': 0}}
 
@@ -53,7 +52,7 @@ class BuildCache:
                 for chunk in iter(lambda: f.read(8192), b''):
                     sha256.update(chunk)
             return sha256.hexdigest()
-        except IOError:
+        except OSError:
             return ""
 
     def _compute_directory_hash(self, directory: Path, patterns: list = None) -> str:

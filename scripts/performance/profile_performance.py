@@ -6,14 +6,14 @@ Provides detailed profiling using cProfile and memory_profiler.
 """
 
 import cProfile
-import pstats
 import io
+import pstats
+import subprocess
 import sys
 import time
 import tracemalloc
 from pathlib import Path
-from typing import Callable, Any
-import subprocess
+from typing import Any, Callable
 
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 PROFILE_DIR = PROJECT_ROOT / "memory" / "profiles"

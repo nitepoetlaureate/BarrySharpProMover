@@ -1,15 +1,15 @@
 """Unit tests for validation scripts."""
 
-import pytest
 import json
-from pathlib import Path
-from unittest.mock import Mock, patch, mock_open
 import sys
+from pathlib import Path
+
+import pytest
 
 # Add scripts to path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent / "scripts" / "validation"))
 
-from check_scene_limits import check_scene, MAX_ACTORS, MAX_TRIGGERS, MAX_SPRITE_TILES
+from check_scene_limits import MAX_ACTORS, MAX_SPRITE_TILES, MAX_TRIGGERS, check_scene
 
 
 class TestSceneLimitsValidation:
