@@ -1,0 +1,88 @@
+version: '3.8'
+
+services:
+  # Development environment
+  dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: barrysharp:dev
+    container_name: barrysharp-dev
+    volumes:
+      - .:/app
+      - build-cache:/app/build
+      - test-cache:/app/.pytest_cache
+    working_dir: /app
+    environment:
+      - PYTHONUNBUFFERED=1
+      - GB_STUDIO_CLI=${GB_STUDIO_CLI:-gb-studio-cli}
+    command: tail -f /dev/null  # Keep container running
+    networks:
+      - barrysharp-network
+
+  # LangFlow integration (optional)
+  langflow:
+    image: langflowai/langflow:latest
+    container_name: barrysharp-langflow
+    ports:
+      - "7860:7860"
+    volumes:
+      - ./.langflow:/app/.langflow
+      - langflow-data:/app/data
+    environment:
+      - LANGFLOW_AUTO_LOGIN=true
+      - LANGFLOW_LOG_LEVEL=INFO
+    networks:
+      - barrysharp-network
+    profiles:
+      - with-langflow
+
+  # Testing environment
+  test:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: barrysharp:test
+    container_name: barrysharp-test
+    volumes:
+      - .:/app
+      - test-results:/app/htmlcov
+    working_dir: /app
+    command: pytest --cov=.langflow --cov-report=html --cov-report=term-missing
+    networks:
+      - barrysharp-network
+    profiles:
+      - test
+
+  # Performance benchmarking
+  benchmark:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: barrysharp:benchmark
+    container_name: barrysharp-benchmark
+    volumes:
+      - .:/app
+      - benchmark-results:/app/memory
+    working_dir: /app
+    command: python3 scripts/performance/benchmark_build.py
+    networks:
+      - barrysharp-network
+    profiles:
+      - benchmark
+
+networks:
+  barrysharp-network:
+    driver: bridge
+
+volumes:
+  build-cache:
+    driver: local
+  test-cache:
+    driver: local
+  test-results:
+    driver: local
+  benchmark-results:
+    driver: local
+  langflow-data:
+    driver: local
