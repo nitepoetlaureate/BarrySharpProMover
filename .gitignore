@@ -1,10 +1,13 @@
-# build artefacts
+# Build artefacts
 /builds/
 /out/
 /dist/
 /*.pocket
+build/*.gb
+build/*.pocket
+.cache/
 
-# local IDE caches
+# Local IDE caches
 .vscode/
 .idea/
 
@@ -17,9 +20,55 @@ node_modules/
 # GB Studio autosaves
 *.gbsproj.bak
 
+# Environment configuration (NEVER commit .env!)
+.env
+.env.local
+.env.*.local
+
+# Logs
+logs/
+*.log
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+*.egg
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Virtual environments
+venv/
+env/
+ENV/
+langflow_env/
+activate/
+
 # Optional: Git LFS will handle these
 *.png
 *.mod
 *.wav
 assets.bak/
 *.swp
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+*~
+.#*
+
+# Project-specific
+memory/*.jsonl
+staging/
+vectorstore/*.faiss
+vectorstore/*.pkl
