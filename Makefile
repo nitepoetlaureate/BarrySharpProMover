@@ -121,3 +121,61 @@ build-and-test: build-rom
 hash-rom: build-rom
 	md5sum ./build/rom.gb > ./build/rom.md5
 	@echo "✅ ROM hash: $$(cat ./build/rom.md5)"
+
+# Testing targets
+.PHONY: test
+test:
+	@echo "🧪 Running all tests..."
+	pytest
+
+.PHONY: test-unit
+test-unit:
+	@echo "🧪 Running unit tests..."
+	pytest tests/unit/ -m unit
+
+.PHONY: test-integration
+test-integration:
+	@echo "🧪 Running integration tests..."
+	pytest tests/integration/ -m integration
+
+.PHONY: test-fast
+test-fast:
+	@echo "🧪 Running fast tests only..."
+	pytest -m "not slow"
+
+.PHONY: test-verbose
+test-verbose:
+	@echo "🧪 Running tests with verbose output..."
+	pytest -vv
+
+.PHONY: coverage
+coverage:
+	@echo "📊 Generating coverage report..."
+	pytest --cov=scripts --cov=langflow_components --cov-report=html --cov-report=term
+	@echo "📊 Coverage report generated in htmlcov/index.html"
+
+.PHONY: coverage-report
+coverage-report:
+	@if [ -d "htmlcov" ]; then \
+		python3 -m http.server 8000 --directory htmlcov; \
+	else \
+		echo "❌ No coverage report found. Run 'make coverage' first."; \
+	fi
+
+.PHONY: install-test-deps
+install-test-deps:
+	@echo "📦 Installing test dependencies..."
+	pip install -r requirements-dev.txt
+	@echo "✅ Test dependencies installed"
+
+.PHONY: test-clean
+test-clean:
+	@echo "🧹 Cleaning test artifacts..."
+	rm -rf .pytest_cache
+	rm -rf htmlcov
+	rm -rf .coverage
+	rm -rf tests/__pycache__
+	rm -rf tests/unit/__pycache__
+	rm -rf tests/integration/__pycache__
+	find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+	@echo "✅ Test artifacts cleaned"

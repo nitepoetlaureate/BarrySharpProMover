@@ -72,3 +72,4 @@ memory/*.jsonl
 staging/
 vectorstore/*.faiss
 vectorstore/*.pkl
+coverage.xml
