@@ -1,0 +1,70 @@
+# BarrySharpProMover Production Dependencies
+# ===========================================
+# Pinned versions for security and reproducibility
+# Update with: pip install -U <package> && pip freeze | grep <package>
+
+# ======================================
+# Core Dependencies (REQUIRED)
+# ======================================
+
+# Image processing for asset validation
+Pillow==10.4.0
+
+# Environment variable management
+python-dotenv==1.0.1
+
+# ======================================
+# RAG System Dependencies (OPTIONAL)
+# ======================================
+# Required only if using RAG features for documentation
+# Install with: pip install -r requirements.txt --extras rag
+
+# LangChain for RAG workflows
+langchain==0.3.7
+langchain-community==0.3.7
+
+# Vector database for embeddings
+faiss-cpu==1.9.0
+
+# Ollama Python client
+ollama==0.4.4
+
+# ======================================
+# LangFlow Dependencies (OPTIONAL)
+# ======================================
+# Required only if using LangFlow automation components
+# Install with: pip install langflow
+
+# Note: LangFlow installation managed separately
+# See: https://docs.langflow.org/getting-started-installation
+
+# langflow==1.4.0  # Uncomment if installing via pip
+
+# ======================================
+# Security Tools
+# ======================================
+
+# Security vulnerability scanner
+safety==3.2.10
+
+# ======================================
+# Notes
+# ======================================
+
+# To install core dependencies only:
+#   pip install Pillow python-dotenv
+
+# To install with RAG support:
+#   pip install -r requirements.txt
+
+# To install development dependencies:
+#   pip install -r requirements-dev.txt
+
+# To check for security vulnerabilities:
+#   safety check --json
+
+# To update dependencies:
+#   1. Test in virtual environment first
+#   2. Update one package at a time
+#   3. Run full test suite
+#   4. Update this file with new versions
